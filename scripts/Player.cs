@@ -17,6 +17,9 @@ public partial class Player : CharacterBody2D
 	
 	//vector user for player velocity
 	private Vector2 velocity = Vector2.Zero;
+
+	//boolean to determine if player can double jump or not
+	bool canDoubleJump = true;
 	
 	//loads player sprite upon opening game
 	public override void _Ready(){
@@ -49,6 +52,12 @@ public partial class Player : CharacterBody2D
 		if(!IsOnFloor()){
 			_playerSprite.Play("jump");
 			velocity.Y += Gravity;
+
+			//double jump
+			if(Input.IsActionJustPressed("jump") && canDoubleJump){
+				velocity.Y = -(JumpForce * 0.9f);
+				canDoubleJump = false;
+			}
 			
 			//cap falling velocity at 1000
 			if(velocity.Y > 1000){
@@ -56,16 +65,37 @@ public partial class Player : CharacterBody2D
 			}
 		}
 		else if(Input.IsActionJustPressed("jump")){
+			canDoubleJump = true; //enable player to double jump after landing on ground
 			velocity.Y = -JumpForce;
 		}
 		
 		Velocity = velocity;
+	}
+
+	public void GetCollision(){
+		for(int i = 0; i < GetSlideCollisionCount(); i++){
+			//get one of the collisions with player
+			KinematicCollision2D collision = GetSlideCollision(i);
+
+			//wall jump
+			if(Input.IsActionJustPressed("jump") 
+			&& ((PhysicsBody2D)collision.GetCollider()).IsInGroup("wallJumpable")){ //this line casts to check if is in walljumpable group
+				velocity.Y = -(JumpForce * 0.9f);
+				//i want to bounce off of the wall the player is facing
+				velocity.X = -velocity.X;
+			}
+		
+			
+		}
+		
+		
 	}
 	
 	
 	
 	public override void _PhysicsProcess(double delta){
 		GetMovement();
+		GetCollision();
 		MoveAndSlide();
 	}
 }

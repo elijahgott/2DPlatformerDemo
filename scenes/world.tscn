@@ -11,11 +11,14 @@ size = Vector2(995, 99)
 [node name="World" type="Node2D"]
 
 [node name="Player" parent="." instance=ExtResource("1_nnsk1")]
-position = Vector2(176, 543)
+position = Vector2(180, 562)
 scale = Vector2(2, 2)
+collision_mask = 6
 
 [node name="Ground" type="StaticBody2D" parent="."]
 position = Vector2(592, 613)
+collision_layer = 2
+collision_mask = 5
 metadata/_edit_group_ = true
 
 [node name="MeshInstance2D" type="MeshInstance2D" parent="Ground"]
@@ -26,8 +29,10 @@ mesh = SubResource("QuadMesh_nnsk1")
 position = Vector2(-1.5, -0.5)
 shape = SubResource("RectangleShape2D_rwgxs")
 
-[node name="Platform" type="StaticBody2D" parent="."]
+[node name="Platform" type="StaticBody2D" parent="." groups=["wallJumpable"]]
 position = Vector2(1474, 511)
+collision_layer = 2
+collision_mask = 5
 metadata/_edit_group_ = true
 
 [node name="MeshInstance2D" type="MeshInstance2D" parent="Platform"]
@@ -38,8 +43,11 @@ mesh = SubResource("QuadMesh_nnsk1")
 position = Vector2(-1.5, -0.5)
 shape = SubResource("RectangleShape2D_rwgxs")
 
-[node name="Platform2" type="StaticBody2D" parent="."]
-position = Vector2(358, 396)
+[node name="Platform2" type="StaticBody2D" parent="." groups=["wallJumpable"]]
+position = Vector2(42, 163)
+rotation = 1.5708
+collision_layer = 2
+collision_mask = 5
 metadata/_edit_group_ = true
 
 [node name="MeshInstance2D" type="MeshInstance2D" parent="Platform2"]
@@ -47,5 +55,36 @@ modulate = Color(1, 0, 1, 1)
 mesh = SubResource("QuadMesh_nnsk1")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platform2"]
+position = Vector2(-1.5, -0.5)
+shape = SubResource("RectangleShape2D_rwgxs")
+
+[node name="Platform3" type="StaticBody2D" parent="." groups=["wallJumpable"]]
+position = Vector2(300, -73)
+rotation = 1.5708
+scale = Vector2(0.84, 1)
+collision_layer = 2
+collision_mask = 5
+metadata/_edit_group_ = true
+
+[node name="MeshInstance2D" type="MeshInstance2D" parent="Platform3"]
+modulate = Color(1, 0, 1, 1)
+mesh = SubResource("QuadMesh_nnsk1")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platform3"]
+position = Vector2(-1.5, -0.5)
+shape = SubResource("RectangleShape2D_rwgxs")
+
+[node name="Platform4" type="StaticBody2D" parent="." groups=["wallJumpable"]]
+position = Vector2(573, 297)
+scale = Vector2(0.64, 1.01009)
+collision_layer = 2
+collision_mask = 5
+metadata/_edit_group_ = true
+
+[node name="MeshInstance2D" type="MeshInstance2D" parent="Platform4"]
+modulate = Color(1, 0, 1, 1)
+mesh = SubResource("QuadMesh_nnsk1")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platform4"]
 position = Vector2(-1.5, -0.5)
 shape = SubResource("RectangleShape2D_rwgxs")
