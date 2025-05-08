@@ -1,5 +1,6 @@
 using Godot;
 using System;
+using System.Runtime.CompilerServices;
 
 public partial class Player : CharacterBody2D
 {
@@ -11,87 +12,158 @@ public partial class Player : CharacterBody2D
 	
 	[Export]
 	public int Gravity {get; set;} = 30;
+
+	[Export]
+	public int WallJumpForce {get; set;} = 300;
+
+	[Export]
+	public int Friction {get; set;} = 50;
 	
 	//player sprite
 	private AnimatedSprite2D _playerSprite;
 	
-	//vector user for player velocity
-	private Vector2 velocity = Vector2.Zero;
+	//vector used for player _velocity
+	private Vector2 _velocity = Vector2.Zero;
+
+	//timer for variable jump height
+	private Timer _jumpHeightTimer; 
+
+	//direction player is currently facing
+	private Vector2 _facingDirection = Vector2.Right;
 
 	//boolean to determine if player can double jump or not
-	bool canDoubleJump = true;
+	private bool _canDoubleJump = true;
 	
 	//loads player sprite upon opening game
 	public override void _Ready(){
 		_playerSprite = GetNode<AnimatedSprite2D>("AnimatedSprite2D");
+		_jumpHeightTimer = GetNode<Timer>("JumpHeightTimer");
 	}
 	
 	public void GetMovement(){
 		//get horizontal input
 		float horizontalDirection = Input.GetAxis("move_left", "move_right");
-		velocity.X = horizontalDirection * Speed;
-		
-		// MIGHT MOVE ANIMATION STUFF TO OWN FUNCTION
-		// animate sprite based on velocity
-		// no horizontal velocity -> idle
-		// negative h velocity -> flip_h = true, run
-		// positive h velocity -> flip_h = false, run
-		if(velocity.X > 0){
-			_playerSprite.FlipH = false;
-			_playerSprite.Play("run");
+
+		if(horizontalDirection == 0){ //no horizontal input applied
+			//apply friction to gradually slow down player
+			if(_velocity.X != 0 && IsOnFloor()){ //dont apply friction while not touching floor
+				if(_facingDirection == Vector2.Left){
+					_velocity.X += Friction;
+					if(_velocity.X >= 0){
+						_velocity.X = 0;
+					}
+				}
+				else if(_facingDirection == Vector2.Right){
+					_velocity.X -= Friction;
+					if(_velocity.X <= 0){
+						_velocity.X = 0;
+					}
+				}
+			}
+
+			if(_velocity.X == 0){
+				_playerSprite.Play("idle");
+			}
 		}
-		else if(velocity.X < 0){
-			_playerSprite.FlipH = true;
-			_playerSprite.Play("run");
-		}
-		else{ // horizontal velocity == 0
-			_playerSprite.Play("idle");
+		else{ //horizontal input being applied
+			_velocity.X = (horizontalDirection * Speed);
+			
+			// MIGHT MOVE ANIMATION STUFF TO OWN FUNCTION
+			// animate sprite based on _velocity and direction facing
+			if(_velocity.X > 0){
+				_facingDirection = Vector2.Right;
+				_playerSprite.FlipH = false;
+				_playerSprite.Play("run");
+			}
+			else if(_velocity.X < 0){
+				_facingDirection = Vector2.Left;
+				_playerSprite.FlipH = true;
+				_playerSprite.Play("run");
+			}
 		}
 		
 		//apply gravity to player when not touching ground
 		if(!IsOnFloor()){
 			_playerSprite.Play("jump");
-			velocity.Y += Gravity;
+			_velocity.Y += Gravity;
 
 			//double jump
-			if(Input.IsActionJustPressed("jump") && canDoubleJump){
-				velocity.Y = -(JumpForce * 0.9f);
-				canDoubleJump = false;
+			if(Input.IsActionJustPressed("jump") && _canDoubleJump && 
+			_velocity.Y < 300){ //prevents player from being able to double jump after falling a certain amount
+				_velocity.Y = -(JumpForce * 0.9f);
+				_canDoubleJump = false;
 			}
 			
-			//cap falling velocity at 1000
-			if(velocity.Y > 1000){
-				velocity.Y = 1000;
+			//cap falling _velocity at 1000
+			if(_velocity.Y > 1000){
+				_velocity.Y = 1000;
 			}
 		}
-		else if(Input.IsActionJustPressed("jump")){
-			canDoubleJump = true; //enable player to double jump after landing on ground
-			velocity.Y = -JumpForce;
+		else{ //while touching the ground
+			_canDoubleJump = true; //enable player to double jump after landing on ground
+
+			if(Input.IsActionJustPressed("jump")){ 
+				_jumpHeightTimer.Start();
+				_velocity.Y = -JumpForce;
+			}
 		}
 		
-		Velocity = velocity;
+		Velocity = _velocity;
 	}
 
 	public void GetCollision(){
 		for(int i = 0; i < GetSlideCollisionCount(); i++){
 			//get one of the collisions with player
 			KinematicCollision2D collision = GetSlideCollision(i);
+			Vector2 normal = collision.GetNormal();
 
-			//wall jump
-			if(Input.IsActionJustPressed("jump") 
-			&& ((PhysicsBody2D)collision.GetCollider()).IsInGroup("wallJumpable")){ //this line casts to check if is in walljumpable group
-				velocity.Y = -(JumpForce * 0.9f);
-				//i want to bounce off of the wall the player is facing
-				velocity.X = -velocity.X;
+			//collision from left
+			if(normal.X > 0){
+				_canDoubleJump = false;
+				//wall jump
+				if(Input.IsActionJustPressed("jump") && IsOnWallOnly()){
+					_canDoubleJump = false;
+					_velocity.Y = -JumpForce;
+					_velocity.X = WallJumpForce;
+					_facingDirection = Vector2.Right;
+					_playerSprite.FlipH = false;
+				}
 			}
-		
-			
+			//collision from right
+			else if(normal.X < 0){
+				_canDoubleJump = false;
+				//wall jump
+				if(Input.IsActionJustPressed("jump") && IsOnWallOnly()){
+					_canDoubleJump = false;
+					_velocity.Y = -JumpForce;
+					_velocity.X = -WallJumpForce;
+					_facingDirection = Vector2.Left;
+					_playerSprite.FlipH = true;
+				}
+			}
+			//collision from top
+			else if(normal.Y > 0){
+				//fix player maintaining upward momentum for too long after hitting head
+				_velocity.Y = 0;
+				_velocity.Y += Gravity;
+			}
+			//collision from bottom
+			else if(normal.Y < 0){
+				break;
+			}
 		}
-		
-		
+		Velocity = _velocity;
 	}
-	
-	
+
+	public void OnJumpHeightTimerTimeout(){
+		if(!Input.IsActionPressed("jump")){
+			if(_velocity.Y < -200){
+				_velocity.Y = -200;
+			}
+		}
+
+		Velocity = _velocity;
+	}
 	
 	public override void _PhysicsProcess(double delta){
 		GetMovement();
