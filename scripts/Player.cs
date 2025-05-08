@@ -5,10 +5,10 @@ using System.Runtime.CompilerServices;
 public partial class Player : CharacterBody2D
 {
 	[Export]
-	public int Speed {get; set;} = 600;
+	public int Speed {get; set;} = 500;
 	
 	[Export]
-	public int JumpForce {get; set;} = 800;
+	public int JumpForce {get; set;} = 700;
 	
 	[Export]
 	public int Gravity {get; set;} = 30;
@@ -28,16 +28,24 @@ public partial class Player : CharacterBody2D
 	//timer for variable jump height
 	private Timer _jumpHeightTimer; 
 
+	//timer for coyote time jump
+	private Timer _coyoteTimer; 
+
 	//direction player is currently facing
 	private Vector2 _facingDirection = Vector2.Right;
 
 	//boolean to determine if player can double jump or not
 	private bool _canDoubleJump = true;
+
+
+	//boolean to determine if player can coyote jump
+	private bool _canCoyoteJump = false;
 	
 	//loads player sprite upon opening game
 	public override void _Ready(){
 		_playerSprite = GetNode<AnimatedSprite2D>("AnimatedSprite2D");
 		_jumpHeightTimer = GetNode<Timer>("JumpHeightTimer");
+		_coyoteTimer = GetNode<Timer>("CoyoteTimer");
 	}
 	
 	public void GetMovement(){
@@ -46,7 +54,7 @@ public partial class Player : CharacterBody2D
 
 		if(horizontalDirection == 0){ //no horizontal input applied
 			//apply friction to gradually slow down player
-			if(_velocity.X != 0 && IsOnFloor()){ //dont apply friction while not touching floor
+			if(_velocity.X != 0){ //dont apply friction while not touching floor
 				if(_facingDirection == Vector2.Left){
 					_velocity.X += Friction;
 					if(_velocity.X >= 0){
@@ -85,7 +93,12 @@ public partial class Player : CharacterBody2D
 		//apply gravity to player when not touching ground
 		if(!IsOnFloor()){
 			_playerSprite.Play("jump");
-			_velocity.Y += Gravity;
+
+			//coyote jump
+			if(Input.IsActionJustPressed("jump") && _canCoyoteJump){
+				_jumpHeightTimer.Start();
+				_velocity.Y = -JumpForce;
+			}
 
 			//double jump
 			if(Input.IsActionJustPressed("jump") && _canDoubleJump && 
@@ -93,6 +106,8 @@ public partial class Player : CharacterBody2D
 				_velocity.Y = -(JumpForce * 0.9f);
 				_canDoubleJump = false;
 			}
+
+			_velocity.Y += Gravity;
 			
 			//cap falling _velocity at 1000
 			if(_velocity.Y > 1000){
@@ -102,7 +117,7 @@ public partial class Player : CharacterBody2D
 		else{ //while touching the ground
 			_canDoubleJump = true; //enable player to double jump after landing on ground
 
-			if(Input.IsActionJustPressed("jump")){ 
+			if(Input.IsActionJustPressed("jump")){
 				_jumpHeightTimer.Start();
 				_velocity.Y = -JumpForce;
 			}
@@ -164,10 +179,22 @@ public partial class Player : CharacterBody2D
 
 		Velocity = _velocity;
 	}
+
+	public void OnCoyoteTimerTimeout(){
+		_canCoyoteJump = false;
+	}
 	
 	public override void _PhysicsProcess(double delta){
 		GetMovement();
 		GetCollision();
+
+		//for coyote time
+		bool wasOnFloor = IsOnFloor();
 		MoveAndSlide();
+		//detect when player is falling off edge
+		if(wasOnFloor && !IsOnFloor() && Velocity.Y >= 0){
+			_canCoyoteJump = true;
+			_coyoteTimer.Start();
+		}
 	}
 }
