@@ -92,7 +92,12 @@ public partial class Player : CharacterBody2D
 		
 		//apply gravity to player when not touching ground
 		if(!IsOnFloor()){
-			_playerSprite.Play("jump");
+			if(Velocity.Y < 0){ //when player is rising
+				_playerSprite.Play("jump");
+			}
+			else if(Velocity.Y > 0){ //player is falling
+				_playerSprite.Play("run");
+			}
 
 			//coyote jump
 			if(Input.IsActionJustPressed("jump") && _canCoyoteJump){
@@ -139,7 +144,7 @@ public partial class Player : CharacterBody2D
 				if(Input.IsActionJustPressed("jump") && IsOnWallOnly()){
 					_canDoubleJump = false;
 					_velocity.Y = -JumpForce;
-					_velocity.X = WallJumpForce;
+					_velocity.X += WallJumpForce;
 					_facingDirection = Vector2.Right;
 					_playerSprite.FlipH = false;
 				}

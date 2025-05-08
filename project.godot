@@ -13,7 +13,7 @@ config_version=5
 config/name="First 2D Platformer"
 run/main_scene="uid://bgny7a0pmisn"
 config/features=PackedStringArray("4.4", "C#", "Forward Plus")
-config/icon="res://icon.svg"
+config/icon="uid://cv8s88oli82qj"
 
 [display]
 
