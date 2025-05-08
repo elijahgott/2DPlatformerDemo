@@ -6,7 +6,7 @@
 [node name="World" type="Node2D"]
 
 [node name="Player" parent="." instance=ExtResource("1_nnsk1")]
-position = Vector2(224, 640)
+position = Vector2(288, 640)
 scale = Vector2(2, 2)
 collision_mask = 6
 

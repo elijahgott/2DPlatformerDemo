@@ -54,22 +54,22 @@ public partial class Player : CharacterBody2D
 
 		if(horizontalDirection == 0){ //no horizontal input applied
 			//apply friction to gradually slow down player
-			if(_velocity.X != 0){ //dont apply friction while not touching floor
+			if(Velocity.X != 0){ //dont apply friction while not touching floor
 				if(_facingDirection == Vector2.Left){
 					_velocity.X += Friction;
-					if(_velocity.X >= 0){
+					if(Velocity.X >= 0){
 						_velocity.X = 0;
 					}
 				}
 				else if(_facingDirection == Vector2.Right){
 					_velocity.X -= Friction;
-					if(_velocity.X <= 0){
+					if(Velocity.X <= 0){
 						_velocity.X = 0;
 					}
 				}
 			}
 
-			if(_velocity.X == 0){
+			if((Velocity.X == 0) && (Velocity.Y == 0)){
 				_playerSprite.Play("idle");
 			}
 		}
@@ -78,12 +78,12 @@ public partial class Player : CharacterBody2D
 			
 			// MIGHT MOVE ANIMATION STUFF TO OWN FUNCTION
 			// animate sprite based on _velocity and direction facing
-			if(_velocity.X > 0){
+			if(Velocity.X > 0){
 				_facingDirection = Vector2.Right;
 				_playerSprite.FlipH = false;
 				_playerSprite.Play("run");
 			}
-			else if(_velocity.X < 0){
+			else if(Velocity.X < 0){
 				_facingDirection = Vector2.Left;
 				_playerSprite.FlipH = true;
 				_playerSprite.Play("run");
@@ -95,8 +95,14 @@ public partial class Player : CharacterBody2D
 			if(Velocity.Y < 0){ //when player is rising
 				_playerSprite.Play("jump");
 			}
-			else if(Velocity.Y > 0){ //player is falling
-				_playerSprite.Play("run");
+			else if(Velocity.Y >= 0 && Velocity.Y < 1000){ //player is falling
+				if(!(_playerSprite.Animation == "fall_SLOW")){
+					_playerSprite.Play("fall_SLOW");
+				}
+			}
+			else if(Velocity.Y >= 1000){ //cap falling _velocity at 1000
+				_playerSprite.Play("fall_FAST");
+				_velocity.Y = 1000;
 			}
 
 			//coyote jump
@@ -113,11 +119,6 @@ public partial class Player : CharacterBody2D
 			}
 
 			_velocity.Y += Gravity;
-			
-			//cap falling _velocity at 1000
-			if(_velocity.Y > 1000){
-				_velocity.Y = 1000;
-			}
 		}
 		else{ //while touching the ground
 			_canDoubleJump = true; //enable player to double jump after landing on ground
@@ -139,6 +140,11 @@ public partial class Player : CharacterBody2D
 
 			//collision from left
 			if(normal.X > 0){
+				//stop momentum if running into wall
+				if(IsOnFloor()){
+					_velocity.X = 0;
+				}
+
 				_canDoubleJump = false;
 				//wall jump
 				if(Input.IsActionJustPressed("jump") && IsOnWallOnly()){
@@ -151,6 +157,11 @@ public partial class Player : CharacterBody2D
 			}
 			//collision from right
 			else if(normal.X < 0){
+				//stop momentum if running into wall
+				if(IsOnFloor()){
+					_velocity.X = 0;
+				}
+
 				_canDoubleJump = false;
 				//wall jump
 				if(Input.IsActionJustPressed("jump") && IsOnWallOnly()){
