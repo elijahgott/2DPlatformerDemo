@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Runtime.CompilerServices;
+using System.Transactions;
 
 public partial class Player : CharacterBody2D
 {
@@ -8,13 +9,17 @@ public partial class Player : CharacterBody2D
 	public int Speed {get; set;} = 500;
 	
 	[Export]
-	public int JumpForce {get; set;} = 700;
+	public int JumpForce {get; set;} = 750;
 	
 	[Export]
 	public int Gravity {get; set;} = 30;
 
 	[Export]
-	public int WallJumpForce {get; set;} = 300;
+	public int WallJumpForce {get; set;} = 800;
+
+	// slow down player when trying to change direction while in air 
+	[Export]
+	public int AirHorizontalSpeed { get; set; } = 0;
 
 	[Export]
 	public int Friction {get; set;} = 50;
@@ -34,9 +39,11 @@ public partial class Player : CharacterBody2D
 	//direction player is currently facing
 	private Vector2 _facingDirection = Vector2.Right;
 
+	//allows / prevents player from moving horizontally
+	private bool _canMoveHorizontal = true;
+
 	//boolean to determine if player can double jump or not
 	private bool _canDoubleJump = true;
-
 
 	//boolean to determine if player can coyote jump
 	private bool _canCoyoteJump = false;
@@ -49,9 +56,14 @@ public partial class Player : CharacterBody2D
 	}
 	
 	public void GetMovement(){
-		//get horizontal input
-		float horizontalDirection = Input.GetAxis("move_left", "move_right");
+		float horizontalDirection = 0;
 
+		if (_canMoveHorizontal)
+		{
+			//get horizontal input
+			horizontalDirection = Input.GetAxis("move_left", "move_right");
+		}
+		
 		if(horizontalDirection == 0){ //no horizontal input applied
 			//apply friction to gradually slow down player
 			if(Velocity.X != 0){ //dont apply friction while not touching floor
@@ -121,9 +133,12 @@ public partial class Player : CharacterBody2D
 			_velocity.Y += Gravity;
 		}
 		else{ //while touching the ground
+			_canMoveHorizontal = true;
 			_canDoubleJump = true; //enable player to double jump after landing on ground
+			_velocity.Y = 0; //resets vertical velocity when touching ground
 
-			if(Input.IsActionJustPressed("jump")){
+			if (Input.IsActionJustPressed("jump"))
+			{
 				_jumpHeightTimer.Start();
 				_velocity.Y = -JumpForce;
 			}
@@ -145,12 +160,18 @@ public partial class Player : CharacterBody2D
 					_velocity.X = 0;
 				}
 
-				_canDoubleJump = false;
-				//wall jump
+				//allows double jumping while touching a wall, but not trying to wall jump
+				if (Input.IsActionJustPressed("move_left"))
+				{
+					_canDoubleJump = false;
+				}
+				
+				//wall jump to right side
 				if(Input.IsActionJustPressed("jump") && IsOnWallOnly()){
+					// _canMoveHorizontal = false;
 					_canDoubleJump = false;
 					_velocity.Y = -JumpForce;
-					_velocity.X += WallJumpForce;
+					_velocity.X = WallJumpForce;
 					_facingDirection = Vector2.Right;
 					_playerSprite.FlipH = false;
 				}
@@ -162,9 +183,16 @@ public partial class Player : CharacterBody2D
 					_velocity.X = 0;
 				}
 
-				_canDoubleJump = false;
-				//wall jump
-				if(Input.IsActionJustPressed("jump") && IsOnWallOnly()){
+				//allows double jumping while touching a wall, but not trying to wall jump
+				if (Input.IsActionJustPressed("move_right"))
+				{
+					_canDoubleJump = false;
+				}
+				
+				//wall jump to left side
+				if (Input.IsActionJustPressed("jump") && IsOnWallOnly())
+				{
+					// _canMoveHorizontal = false;
 					_canDoubleJump = false;
 					_velocity.Y = -JumpForce;
 					_velocity.X = -WallJumpForce;
