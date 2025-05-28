@@ -1,0 +1,31 @@
+[gd_scene load_steps=3 format=3 uid="uid://dga47bbmrgrir"]
+
+[ext_resource type="Texture2D" uid="uid://epo4q7sndw17" path="res://assets/textures/environment/F2DP_Background_Sky.png" id="1_g4xne"]
+[ext_resource type="Texture2D" uid="uid://r2du3px1shq1" path="res://assets/textures/environment/F2DP_Background_Tree.png" id="2_0e05q"]
+
+[node name="Parallax2D" type="Parallax2D"]
+
+[node name="ParallaxBackground" type="ParallaxBackground" parent="."]
+scale = Vector2(2.2, 2.2)
+transform = Transform2D(2.2, 0, 0, 2.2, 0, 0)
+
+[node name="Sky" type="ParallaxLayer" parent="ParallaxBackground"]
+position = Vector2(0, -32.7273)
+motion_scale = Vector2(0, 0.1)
+
+[node name="Sprite2D" type="Sprite2D" parent="ParallaxBackground/Sky"]
+texture_filter = 1
+texture = ExtResource("1_g4xne")
+centered = false
+
+[node name="Grass" type="ParallaxLayer" parent="ParallaxBackground"]
+position = Vector2(0, -32.7273)
+motion_scale = Vector2(0.1, 0.1)
+motion_mirroring = Vector2(400, 0)
+
+[node name="Sprite2D" type="Sprite2D" parent="ParallaxBackground/Grass"]
+texture_filter = 1
+texture_repeat = 3
+position = Vector2(0, 32.7273)
+texture = ExtResource("2_0e05q")
+centered = false
